@@ -34,11 +34,15 @@ const initialItems = [
 ];
 const insertStmt = db.prepare('INSERT INTO items (title, description, completed) VALUES (?, ?, ?)');
 
-initialItems.forEach(item => {
-  insertStmt.run(item.title, item.description, item.completed);
-});
-
-console.log('In-memory database initialized with sample data');
+const itemCount = db.prepare('SELECT COUNT(*) as count FROM items').get().count;
+if (itemCount === 0) {
+  initialItems.forEach(item => {
+    insertStmt.run(item.title, item.description, item.completed);
+  });
+  console.log('Database seeded with initial sample data');
+} else {
+  console.log('Database already contains items, skipping seeding');
+}
 
 // API Routes
 

@@ -1,0 +1,58 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "To Do App" [level=1] [ref=e5]
+    - paragraph [ref=e6]: Keep track of your tasks
+  - main [ref=e7]:
+    - generic [ref=e8]:
+      - heading "Add New Task" [level=2] [ref=e9]
+      - generic [ref=e10]:
+        - textbox "Task title" [ref=e11]
+        - textbox "Task description" [ref=e12]
+        - button "Add Task" [active] [ref=e13] [cursor=pointer]
+    - generic [ref=e14]:
+      - heading "Tasks" [level=2] [ref=e15]
+      - list [ref=e16]:
+        - listitem [ref=e17]:
+          - generic [ref=e18]:
+            - checkbox "Mark as complete" [ref=e19]
+            - generic [ref=e20]: E2E Task
+            - generic [ref=e21]: E2E Description
+          - generic [ref=e22]:
+            - button "Edit task" [ref=e23] [cursor=pointer]: Edit
+            - button "Delete task" [ref=e24] [cursor=pointer]: Delete
+        - listitem [ref=e25]:
+          - generic [ref=e26]:
+            - checkbox "Mark as incomplete" [checked] [ref=e27]
+            - generic [ref=e28]: E2E Task Edited
+            - generic [ref=e29]: E2E Description Edited
+          - generic [ref=e30]:
+            - button "Edit task" [ref=e31] [cursor=pointer]: Edit
+            - button "Delete task" [ref=e32] [cursor=pointer]: Delete
+        - listitem [ref=e33]:
+          - generic [ref=e34]:
+            - checkbox "Mark as complete" [ref=e35]
+            - generic [ref=e36]: Item 2
+            - generic [ref=e37]: Description 2
+          - generic [ref=e38]:
+            - button "Edit task" [ref=e39] [cursor=pointer]: Edit
+            - button "Delete task" [ref=e40] [cursor=pointer]: Delete
+        - listitem [ref=e41]:
+          - generic [ref=e42]:
+            - checkbox "Mark as complete" [ref=e43]
+            - generic [ref=e44]: Item 3
+            - generic [ref=e45]: Description 3
+          - generic [ref=e46]:
+            - button "Edit task" [ref=e47] [cursor=pointer]: Edit
+            - button "Delete task" [ref=e48] [cursor=pointer]: Delete
+        - listitem [ref=e49]:
+          - generic [ref=e50]:
+            - checkbox "Mark as complete" [ref=e51]
+            - generic [ref=e52]: E2E Task
+            - generic [ref=e53]: E2E Description
+          - generic [ref=e54]:
+            - button "Edit task" [ref=e55] [cursor=pointer]: Edit
+            - button "Delete task" [ref=e56] [cursor=pointer]: Delete
+```

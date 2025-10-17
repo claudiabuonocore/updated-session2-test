@@ -48,7 +48,8 @@ function App() {
         throw new Error('Failed to add item');
       }
       const result = await response.json();
-      setData([...data, result]);
+      // Remove any item with the same id before adding
+      setData(prev => [...prev.filter(item => item.id !== result.id), result]);
       setNewTitle('');
       setNewDescription('');
     } catch (err) {
@@ -93,7 +94,8 @@ function App() {
         throw new Error('Failed to update item');
       }
       const updatedItem = await response.json();
-      setData(data.map(item => item.id === editId ? updatedItem : item));
+      // Remove any item with the same id before adding the updated one
+      setData(prev => [...prev.filter(item => item.id !== updatedItem.id), updatedItem]);
       setEditId(null);
       setEditTitle('');
       setEditDescription('');
