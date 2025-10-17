@@ -11,29 +11,38 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
-// Initialize in-memory SQLite database
-const db = new Database(':memory:');
+// Initialize file-based SQLite database for persistence
+const db = new Database('todo.sqlite');
 
 // Create tables
 db.exec(`
   CREATE TABLE IF NOT EXISTS items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    title TEXT NOT NULL,
+    description TEXT,
+    completed INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )
 `);
 
 // Insert some initial data
-const initialItems = ['Item 1', 'Item 2', 'Item 3'];
-const insertStmt = db.prepare('INSERT INTO items (name) VALUES (?)');
+const initialItems = [
+  { title: 'Item 1', description: 'Description 1', completed: 0 },
+  { title: 'Item 2', description: 'Description 2', completed: 0 },
+  { title: 'Item 3', description: 'Description 3', completed: 0 },
+];
+const insertStmt = db.prepare('INSERT INTO items (title, description, completed) VALUES (?, ?, ?)');
 
 initialItems.forEach(item => {
-  insertStmt.run(item);
+  insertStmt.run(item.title, item.description, item.completed);
 });
 
 console.log('In-memory database initialized with sample data');
 
 // API Routes
+
+// Get all items
 app.get('/api/items', (req, res) => {
   try {
     const items = db.prepare('SELECT * FROM items ORDER BY created_at DESC').all();
@@ -44,17 +53,17 @@ app.get('/api/items', (req, res) => {
   }
 });
 
+// Create a new item
 app.post('/api/items', (req, res) => {
   try {
-    const { name } = req.body;
+    const { title, description, completed } = req.body;
 
-    if (!name || typeof name !== 'string' || name.trim() === '') {
-      return res.status(400).json({ error: 'Item name is required' });
+    if (!title || typeof title !== 'string' || title.trim() === '') {
+      return res.status(400).json({ error: 'Item title is required' });
     }
 
-    const result = insertStmt.run(name);
+    const result = insertStmt.run(title, description || '', completed ? 1 : 0);
     const id = result.lastInsertRowid;
-
     const newItem = db.prepare('SELECT * FROM items WHERE id = ?').get(id);
     res.status(201).json(newItem);
   } catch (error) {
@@ -63,6 +72,64 @@ app.post('/api/items', (req, res) => {
   }
 });
 
+// Update an item
+app.put('/api/items/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, completed } = req.body;
+
+    const existingItem = db.prepare('SELECT * FROM items WHERE id = ?').get(id);
+    if (!existingItem) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    const updateStmt = db.prepare(`
+      UPDATE items SET
+        title = ?,
+        description = ?,
+        completed = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+    updateStmt.run(
+      title || existingItem.title,
+      description !== undefined ? description : existingItem.description,
+      completed !== undefined ? (completed ? 1 : 0) : existingItem.completed,
+      id
+    );
+
+    const updatedItem = db.prepare('SELECT * FROM items WHERE id = ?').get(id);
+    res.json(updatedItem);
+  } catch (error) {
+    console.error('Error updating item:', error);
+    res.status(500).json({ error: 'Failed to update item' });
+  }
+});
+
+// Mark item as completed/uncompleted
+app.patch('/api/items/:id/completed', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { completed } = req.body;
+
+    const existingItem = db.prepare('SELECT * FROM items WHERE id = ?').get(id);
+    if (!existingItem) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    const updateStmt = db.prepare('UPDATE items SET completed = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
+    updateStmt.run(completed ? 1 : 0, id);
+
+    const updatedItem = db.prepare('SELECT * FROM items WHERE id = ?').get(id);
+    res.json(updatedItem);
+  } catch (error) {
+    console.error('Error updating completion status:', error);
+    res.status(500).json({ error: 'Failed to update completion status' });
+  }
+});
+
+
+// Delete an item
 app.delete('/api/items/:id', (req, res) => {
   try {
     const { id } = req.params;

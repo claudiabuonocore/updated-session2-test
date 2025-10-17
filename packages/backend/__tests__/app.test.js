@@ -9,10 +9,10 @@ afterAll(() => {
 });
 
 // Test helpers
-const createItem = async (name = 'Temp Item to Delete') => {
+const createItem = async (title = 'Temp Item', description = 'Temp Description', completed = false) => {
   const response = await request(app)
     .post('/api/items')
-    .send({ name })
+    .send({ title, description, completed })
     .set('Accept', 'application/json');
 
   expect(response.status).toBe(201);
@@ -31,15 +31,17 @@ describe('API Endpoints', () => {
 
       // Check if items have the expected structure
       const item = response.body[0];
-      expect(item).toHaveProperty('id');
-      expect(item).toHaveProperty('name');
-      expect(item).toHaveProperty('created_at');
+  expect(item).toHaveProperty('id');
+  expect(item).toHaveProperty('title');
+  expect(item).toHaveProperty('description');
+  expect(item).toHaveProperty('completed');
+  expect(item).toHaveProperty('created_at');
     });
   });
 
   describe('POST /api/items', () => {
     it('should create a new item', async () => {
-      const newItem = { name: 'Test Item' };
+      const newItem = { title: 'Test Item', description: 'Test Desc', completed: false };
       const response = await request(app)
         .post('/api/items')
         .send(newItem)
@@ -47,11 +49,13 @@ describe('API Endpoints', () => {
 
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('id');
-      expect(response.body.name).toBe(newItem.name);
+      expect(response.body.title).toBe(newItem.title);
+      expect(response.body.description).toBe(newItem.description);
+      expect(response.body.completed).toBe(0);
       expect(response.body).toHaveProperty('created_at');
     });
 
-    it('should return 400 if name is missing', async () => {
+    it('should return 400 if title is missing', async () => {
       const response = await request(app)
         .post('/api/items')
         .send({})
@@ -59,25 +63,77 @@ describe('API Endpoints', () => {
 
       expect(response.status).toBe(400);
       expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toBe('Item name is required');
+      expect(response.body.error).toBe('Item title is required');
     });
 
-    it('should return 400 if name is empty', async () => {
+    it('should return 400 if title is empty', async () => {
       const response = await request(app)
         .post('/api/items')
-        .send({ name: '' })
+        .send({ title: '' })
         .set('Accept', 'application/json');
 
       expect(response.status).toBe(400);
       expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toBe('Item name is required');
+      expect(response.body.error).toBe('Item title is required');
+    });
+  });
+
+  describe('PUT /api/items/:id', () => {
+    it('should update an existing item', async () => {
+      const item = await createItem('Editable Item', 'Edit Desc');
+      const updatedTitle = 'Updated Title';
+      const updatedDescription = 'Updated Description';
+      const response = await request(app)
+        .put(`/api/items/${item.id}`)
+        .send({ title: updatedTitle, description: updatedDescription })
+        .set('Accept', 'application/json');
+
+      expect(response.status).toBe(200);
+      expect(response.body.title).toBe(updatedTitle);
+      expect(response.body.description).toBe(updatedDescription);
+    });
+
+    it('should return 404 for non-existent item', async () => {
+      const response = await request(app)
+        .put('/api/items/999999')
+        .send({ title: 'Does not exist' })
+        .set('Accept', 'application/json');
+      expect(response.status).toBe(404);
+      expect(response.body).toHaveProperty('error', 'Item not found');
+    });
+  });
+
+  describe('PATCH /api/items/:id/completed', () => {
+    it('should mark item as completed and uncompleted', async () => {
+      const item = await createItem('Complete Me', 'Complete Desc', false);
+      const completeResponse = await request(app)
+        .patch(`/api/items/${item.id}/completed`)
+        .send({ completed: true })
+        .set('Accept', 'application/json');
+      expect(completeResponse.status).toBe(200);
+      expect(completeResponse.body.completed).toBe(1);
+
+      const uncompleteResponse = await request(app)
+        .patch(`/api/items/${item.id}/completed`)
+        .send({ completed: false })
+        .set('Accept', 'application/json');
+      expect(uncompleteResponse.status).toBe(200);
+      expect(uncompleteResponse.body.completed).toBe(0);
+    });
+
+    it('should return 404 for non-existent item', async () => {
+      const response = await request(app)
+        .patch('/api/items/999999/completed')
+        .send({ completed: true })
+        .set('Accept', 'application/json');
+      expect(response.status).toBe(404);
+      expect(response.body).toHaveProperty('error', 'Item not found');
     });
   });
 
   describe('DELETE /api/items/:id', () => {
     it('should delete an existing item', async () => {
-      const item = await createItem('Item To Be Deleted');
-
+      const item = await createItem('Item To Be Deleted', 'Delete Desc');
       const deleteResponse = await request(app).delete(`/api/items/${item.id}`);
       expect(deleteResponse.status).toBe(200);
       expect(deleteResponse.body).toEqual({ message: 'Item deleted successfully', id: item.id });
